@@ -600,6 +600,7 @@ const I18N_CONF = {
     passwordError: '密码不能为空!',
     rePasswordError: '确认密码不能为空!',
     rePasswordError2: '两次输入密码不一致!',
+    simplePassword: '密码过于简单!',
   },
   PasswordReset: {
     resetPassword: '密码重置',
@@ -611,6 +612,7 @@ const I18N_CONF = {
     rePasswordPlaceholder: '请输入确认密码',
     rePasswordError: '确认密码不能为空!',
     rePasswordError2: '两次输入密码不一致!',
+    simplePassword: '密码过于简单!',
   },
   RolesManagement: {
     roleManagement: '角色管理',

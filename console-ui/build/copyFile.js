@@ -18,8 +18,10 @@ const fs = require('fs');
 const path = require('path');
 // 默认打包存放地址
 const srcDir = path.join(__dirname, '../dist');
+// const srcDir = path.join(__dirname, 'D:\\work\\nacos\\console-ui\\dist');
 // 打包后文件存放地址
 const destDir = path.join(__dirname, '../../console/src/main/resources/static/');
+// const destDir = path.join(__dirname, 'D:\\work\\nacos\\console\\src\\main\\resources\\static');
 
 const mkdir = dir => {
     if (!fs.existsSync(dir)) {

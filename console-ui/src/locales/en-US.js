@@ -605,6 +605,7 @@ const I18N_CONF = {
     passwordError: 'Password cannot be empty!',
     rePasswordError: 'Repeat Password cannot be empty!',
     rePasswordError2: 'Passwords are inconsistent!',
+    simplePassword: 'Passwords too simple!',
   },
   PasswordReset: {
     resetPassword: 'Password Reset',
@@ -616,6 +617,7 @@ const I18N_CONF = {
     passwordError: 'Password cannot be empty!',
     rePasswordError: 'Repeat Password cannot be empty!',
     rePasswordError2: 'Passwords are inconsistent!',
+    simplePassword: 'Passwords too simple!',
   },
   RolesManagement: {
     roleManagement: 'Role management',

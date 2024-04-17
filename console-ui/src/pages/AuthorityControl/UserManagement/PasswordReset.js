@@ -61,6 +61,11 @@ class PasswordReset extends React.Component {
       this.field.setError('rePassword', locale.rePasswordError2);
       return null;
     }
+    const reg = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$\n/;
+    if (!reg.test(rePassword)) {
+      this.field.setError('rePassword', locale.simplePassword);
+      return null;
+    }
     return [this.props.username, ...vals];
   }
 

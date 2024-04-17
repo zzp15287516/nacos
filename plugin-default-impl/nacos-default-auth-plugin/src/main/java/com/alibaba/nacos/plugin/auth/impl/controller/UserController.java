@@ -68,26 +68,26 @@ import java.util.List;
 @RestController("user")
 @RequestMapping({"/v1/auth", "/v1/auth/users"})
 public class UserController {
-    
+
     @Autowired
     private TokenManagerDelegate jwtTokenManager;
-    
+
     @Autowired
     @Deprecated
     private AuthenticationManager authenticationManager;
-    
+
     @Autowired
     private NacosUserDetailsServiceImpl userDetailsService;
-    
+
     @Autowired
     private NacosRoleServiceImpl roleService;
-    
+
     @Autowired
     private AuthConfigs authConfigs;
-    
+
     @Autowired
     private IAuthenticationManager iAuthenticationManager;
-    
+
     /**
      * Create a new user.
      *
@@ -100,7 +100,9 @@ public class UserController {
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
     @PostMapping
     public Object createUser(@RequestParam String username, @RequestParam String password) {
-        
+        if (!PasswordEncoderUtil.simpleCheck(password)) {
+            throw new IllegalArgumentException("Password too simple!");
+        }
         User user = userDetailsService.getUserFromDatabase(username);
         if (user != null) {
             throw new IllegalArgumentException("user '" + username + "' already exist!");
@@ -108,7 +110,7 @@ public class UserController {
         userDetailsService.createUser(username, PasswordEncoderUtil.encode(password));
         return RestResultUtils.success("create user ok!");
     }
-    
+
     /**
      * Delete an existed user.
      *
@@ -130,7 +132,7 @@ public class UserController {
         userDetailsService.deleteUser(username);
         return RestResultUtils.success("delete user ok!");
     }
-    
+
     /**
      * Update an user.
      *
@@ -145,7 +147,10 @@ public class UserController {
     @PutMapping
     @Secured(resource = AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, action = ActionTypes.WRITE)
     public Object updateUser(@RequestParam String username, @RequestParam String newPassword,
-            HttpServletResponse response, HttpServletRequest request) throws IOException {
+                             HttpServletResponse response, HttpServletRequest request) throws IOException {
+        if (!PasswordEncoderUtil.simpleCheck(newPassword)) {
+            throw new IllegalArgumentException("Password too simple!");
+        }
         // admin or same user
         try {
             if (!hasPermission(username, request)) {
@@ -159,17 +164,17 @@ public class UserController {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "authorization failed!");
             return null;
         }
-        
+
         User user = userDetailsService.getUserFromDatabase(username);
         if (user == null) {
             throw new IllegalArgumentException("user " + username + " not exist!");
         }
-        
+
         userDetailsService.updateUserPassword(username, PasswordEncoderUtil.encode(newPassword));
-        
+
         return RestResultUtils.success("update user ok!");
     }
-    
+
     private boolean hasPermission(String username, HttpServletRequest request) throws HttpSessionRequiredException, AccessException {
         if (!authConfigs.isAuthEnabled()) {
             return true;
@@ -195,7 +200,7 @@ public class UserController {
         // same user
         return user.getUserName().equals(username);
     }
-    
+
     /**
      * Get paged users.
      *
@@ -207,17 +212,17 @@ public class UserController {
     @GetMapping(params = "search=accurate")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.READ)
     public Page<User> getUsers(@RequestParam int pageNo, @RequestParam int pageSize,
-            @RequestParam(name = "username", required = false, defaultValue = "") String username) {
+                               @RequestParam(name = "username", required = false, defaultValue = "") String username) {
         return userDetailsService.getUsersFromDatabase(pageNo, pageSize, username);
     }
-    
+
     @GetMapping(params = "search=blur")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.READ)
     public Page<User> fuzzySearchUser(@RequestParam int pageNo, @RequestParam int pageSize,
-            @RequestParam(name = "username", required = false, defaultValue = "") String username) {
+                                      @RequestParam(name = "username", required = false, defaultValue = "") String username) {
         return userDetailsService.findUsersLike4Page(username, pageNo, pageSize);
     }
-    
+
     /**
      * Login to Nacos
      *
@@ -232,14 +237,14 @@ public class UserController {
      */
     @PostMapping("/login")
     public Object login(@RequestParam String username, @RequestParam String password, HttpServletResponse response,
-            HttpServletRequest request) throws AccessException {
-        
+                        HttpServletRequest request) throws AccessException {
+
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())
                 || AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
             NacosUser user = iAuthenticationManager.authenticate(request);
-            
+
             response.addHeader(AuthConstants.AUTHORIZATION_HEADER, AuthConstants.TOKEN_PREFIX + user.getToken());
-            
+
             ObjectNode result = JacksonUtils.createEmptyJsonNode();
             result.put(Constants.ACCESS_TOKEN, user.getToken());
             result.put(Constants.TOKEN_TTL, jwtTokenManager.getTokenTtlInSeconds(user.getToken()));
@@ -247,11 +252,11 @@ public class UserController {
             result.put(Constants.USERNAME, user.getUserName());
             return result;
         }
-        
+
         // create Authentication class through username and password, the implement class is UsernamePasswordAuthenticationToken
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username,
                 password);
-        
+
         try {
             // use the method authenticate of AuthenticationManager(default implement is ProviderManager) to valid Authentication
             Authentication authentication = authenticationManager.authenticate(authenticationToken);
@@ -266,7 +271,7 @@ public class UserController {
             return RestResultUtils.failed(HttpStatus.UNAUTHORIZED.value(), null, "Login failed");
         }
     }
-    
+
     /**
      * Update password.
      *
@@ -277,12 +282,12 @@ public class UserController {
     @PutMapping("/password")
     @Deprecated
     public RestResult<String> updatePassword(@RequestParam(value = "oldPassword") String oldPassword,
-            @RequestParam(value = "newPassword") String newPassword) {
+                                             @RequestParam(value = "newPassword") String newPassword) {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = ((UserDetails) principal).getUsername();
         User user = userDetailsService.getUserFromDatabase(username);
         String password = user.getPassword();
-        
+
         // TODO: throw out more fine grained exceptions
         try {
             if (PasswordEncoderUtil.matches(oldPassword, password)) {
@@ -294,8 +299,8 @@ public class UserController {
             return RestResultUtils.failed(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Update userpassword failed");
         }
     }
-    
-    
+
+
     /**
      * Fuzzy matching username.
      *
